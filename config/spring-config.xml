@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:task="http://www.springframework.org/schema/task" xmlns:batch="http://www.springframework.org/schema/batch"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:ldap="http://www.springframework.org/schema/ldap"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.0.xsd
+        http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch-2.2.xsd
+        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+		http://www.springframework.org/schema/ldap http://www.springframework.org/schema/ldap/spring-ldap.xsd        ">
+
+	<task:annotation-driven scheduler="myScheduler" />
+	<task:scheduler id="myScheduler" pool-size="1000" />
+
+	<context:component-scan base-package="com.maxis." />
+	<context:property-placeholder location="file:config\database.properties" />
+	<!--<bean id="propertiesConfiguration" class="org.apache.commons.configuration.DatabaseConfiguration"> 
+		<constructor-arg type="javax.sql.DataSource" ref="dataSource"/> <constructor-arg 
+		index="1" value="PORTAL_GLOBAL_CONFIGURATION"/> <constructor-arg index="2" 
+		value="CREATED_BY"/> <constructor-arg index="3" value="PARAMETER_NAME"/> 
+		<constructor-arg index="4" value="PARAMETER_VALUE"/> <constructor-arg index="5" 
+		value="BATCHADM"/> </bean> -->
+
+	<!-- Properties fetching can be localized by enabling below File based configuration 
+		and disabling the DatabaseConfiguration during development. -->
+		<bean id="propertiesConfiguration" class="org.apache.commons.configuration.PropertiesConfiguration"  >
+		<constructor-arg type="java.net.URL" value="file:config\config.properties" />
+		<property name="reloadingStrategy">
+        	<bean class="org.apache.commons.configuration.reloading.FileChangedReloadingStrategy"/>
+		</property>	
+		<property name="delimiterParsingDisabled" value="true" />
+    </bean> 
+
+
+
+
+	<bean id="log4jInitialization"
+		class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="targetClass" value="org.springframework.util.Log4jConfigurer" />
+		<property name="targetMethod" value="initLogging" />
+		<property name="arguments">
+			<list>
+				<value>config\log4j.properties</value>
+				<value>1000</value>
+			</list>
+		</property>
+	</bean>
+
+
+	<!-- Datasource Dev <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"> 
+		<property name="url" value="jdbc:oracle:thin:@10.202.73.38:1522:EBDTEST"/> 
+		<property name="username" value="ebd_dev"/> <property name="password" value="ebddev123"/> 
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/> 
+		</bean> -->
+
+<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="${database.driver}" />
+		<property name="url" value="${database.url}" />
+		<property name="username" value="${database.user}" />
+		<property name="password" value="${database.password}" />
+	</bean>
+
+	<!-- Datasource UAT <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"> 
+		<property name="url" value="jdbc:oracle:thin:@10.202.73.38:1522:EBDTEST"/> 
+		<property name="username" value="ebd_user"/> <property name="password" value="EBD_USER#1234"/> 
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/> 
+		</bean> -->
+
+	<!-- <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"> 
+		<property name="url" value="jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=172.21.8.208)(PORT=1521))(ADDRESS=(PROTOCOL=TCP)(HOST=172.21.8.209)(PORT=1521))(LOAD_BALANCE=yes)(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=ebdprodsrv.men.maxis.com.my)(FAILOVER_MODE=(TYPE=select)(METHOD=basic))))"/> 
+		<property name="username" value="MXSCORPUSER"/> <property name="password" 
+		value="Max1sC0rpU5er14"/> <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/> 
+		</bean> -->
+
+
+
+	<bean id="template" class="org.springframework.jdbc.core.JdbcTemplate"
+		>
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+ 
+	<bean id="dailyReportDao" class="com.maxis.com.dailyReport.dao.impl.DailyReportDaoImpl" autowire="default">  
+	<property name="template" ref="template"></property>
+	</bean>
+
+	<bean id="dailyReportHelper" class="com.maxis.helper.impl.DailyReportHelperImpl" autowire="default">  
+		
+	</bean>
+<bean id="dailyReportDataHelper" class="com.maxis.helper.impl.DailyReportDataHelperImpl" autowire="default">  
+	
+	</bean>
+
+
+<bean id="monthlyReportDao" class="com.maxis.com.dailyReport.dao.impl.MonthlyReportDaoImpl" autowire="default">  
+	<property name="template" ref="template"></property>
+	</bean>
+
+	<bean id="monthlyReportHelper" class="com.maxis.helper.impl.CustExpReportHelperImpl" autowire="default">  
+		
+	</bean>
+<bean id="monthlyReportDataHelper" class="com.maxis.helper.impl.CustExpReportDataHelperImpl" autowire="default">  
+	
+	</bean>
+
+
+
+	<!-- Batch Job Repository -->
+	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.JobRepositoryFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="databaseType" value="oracle" />
+		<property name="tablePrefix" value="batch_" />
+	</bean>
+
+	<bean id="transactionManager"
+		class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+
+	<!-- Batch job Launcher -->
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+
+
+	<bean id="jobExplorer"
+		class="org.springframework.batch.core.explore.support.JobExplorerFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+
+	<!-- SMTP Configuration Manager -->
+	<bean id="configurationManager" class="com.maxis.common.ConfigurationManager">
+		<property name="propertiesConfiguration" ref="propertiesConfiguration" />
+	</bean>
+
+	<bean id="queryPropertiesConfiguration"
+		class="org.apache.commons.configuration.PropertiesConfiguration">
+		<constructor-arg type="java.net.URL"
+			value="file:config\dailyReportQueries.properties" />
+		<property name="reloadingStrategy">
+			<bean
+				class="org.apache.commons.configuration.reloading.FileChangedReloadingStrategy" />
+		</property>
+		<property name="delimiterParsingDisabled" value="true" />
+	</bean>
+
+<bean id="dbQueries" class="com.maxis.common.DBQueries">
+		<property name="queryPropertiesConfiguration" ref="queryPropertiesConfiguration" />
+	</bean>
+
+
+</beans>
